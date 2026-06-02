@@ -72,7 +72,7 @@
             <h2 class="text-3xl md:text-4xl font-extrabold text-gray-800 mb-4">
                 <span class="text-nthu-purple">企業領航微學分</span> 懶人包闖關挑戰
             </h2>
-            <p class="text-gray-600 md:text-lg">你聽過「企業微學分課程」嗎？完成以下四個關卡，解鎖含金量超高的課程資訊！</p>
+            <p class="text-gray-600 md:text-lg">你聽過「企業微學分課程」嗎？完成以下五個關卡，解鎖含金量超高的課程資訊！</p>
         </div>
 
         <!-- 進度條 -->
@@ -86,8 +86,8 @@
             </div>
         </div>
 
-        <!-- 關卡網格 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative" id="level-container">
+        <!-- 關卡網格 (調整為 lg:grid-cols-3 讓 5 個關卡排版更對稱) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative" id="level-container">
             <!-- 關卡卡片將透過 JS 動態生成 -->
         </div>
 
@@ -191,7 +191,23 @@
             },
             {
                 id: 4,
-                title: "第四關：滿載而歸",
+                title: "第四關：開課單位",
+                subtitle: "選課資訊",
+                icon: "fa-school",
+                info: "選課時常常在系統裡迷路嗎？這門企業領航微學分課程，其實有固定的開課單位喔！",
+                question: "請問「企業領航微學分課程」是要選哪一個開課單位？",
+                options: [
+                    "電機資訊學院 (代號EC)",
+                    "清華學院 (代號THC)",
+                    "通識教育中心 (代號GE)",
+            
+                ],
+                correctIndex: 1,
+                successMsg: "沒錯！選課時記得在系統尋找「清華學院(THC)」就對啦！"
+            },
+            {
+                id: 5,
+                title: "第五關：滿載而歸",
                 subtitle: "通關確認",
                 icon: "fa-rocket",
                 info: "完成企業領航微學分課程，不僅能累積學分，還能豐富你的履歷，透過期末謝師餐會更能提早建立職場人脈，為未來的職涯發展打下堅實基礎。",
