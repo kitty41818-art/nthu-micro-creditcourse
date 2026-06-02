@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清華大學 - 企業領航微學分課程闖關挑戰</title>
+    <!-- 使用 Tailwind CSS 進行快速響應式排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome 圖示 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- 引入 Canvas Confetti 煙火特效 (用於通關慶祝) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'nthu-purple': '#6B21A8', // 清華紫參考色
+                        'nthu-purple-light': '#9333EA',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif; }
+        .level-card { transition: all 0.3s ease; }
+        /* 未解鎖狀態的樣式 */
+        .locked { 
+            opacity: 0.6; 
+            filter: grayscale(100%); 
+            transform: scale(0.95);
+        }
+        /* 解鎖但未完成狀態的樣式 */
+        .unlocked { 
+            cursor: pointer; 
+            border: 2px dashed #9333EA;
+        }
+        .unlocked:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 25px -5px rgba(107, 33, 168, 0.3);
+        }
+        /* 已完成狀態的樣式 */
+        .completed { 
+            border: 2px solid #10B981; 
+            background-color: #F0FDF4;
+        }
+        .completed-badge { display: none; }
+        .completed .completed-badge { display: block; }
+        .completed .icon-container { background-color: #10B981; color: white; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-nthu-purple text-white shadow-lg relative z-10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-university text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wider">清華大學 職涯發展組</h1>
+            </div>
+            <div class="text-sm hidden sm:block">
+                <span>企業領航微學分課程</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 闖關主區塊 -->
+    <main class="flex-grow container mx-auto px-4 py-10 max-w-5xl">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-800 mb-4">
+                <span class="text-nthu-purple">企業領航微學分</span> 懶人包闖關挑戰
+            </h2>
+            <p class="text-gray-600 md:text-lg">你聽過「企業微學分課程」嗎？完成以下四個關卡，解鎖含金量超高的課程資訊！</p>
+        </div>
+
+        <!-- 進度條 -->
+        <div class="mb-12 max-w-3xl mx-auto px-4">
+            <div class="flex justify-between mb-2">
+                <span class="text-xs font-semibold inline-block text-nthu-purple">闖關進度</span>
+                <span class="text-xs font-semibold inline-block text-nthu-purple" id="progress-text">0%</span>
+            </div>
+            <div class="flex h-3 overflow-hidden text-base bg-gray-200 rounded-full">
+                <div id="progress-bar" class="transition-all duration-500 flex flex-col justify-center text-center text-white bg-nthu-purple" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- 關卡網格 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative" id="level-container">
+            <!-- 關卡卡片將透過 JS 動態生成 -->
+        </div>
+
+        <!-- 通關最終畫面 (預設隱藏) -->
+        <div id="success-section" class="hidden mt-16 text-center bg-white p-8 rounded-2xl shadow-xl border-t-4 border-nthu-purple transform transition-all duration-500 scale-95 opacity-0">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">🎉 恭喜完成所有關卡！ 🎉</h3>
+            <p class="text-gray-600 mb-6 text-lg">你已經完全了解「企業領航微學分課程」的核心資訊。<br>正式選課時，趕快把這門課收進課表裡吧！</p>
+            <a href="https://ccd.nthu.edu.tw/page/126" target="_blank" class="inline-block bg-nthu-purple hover:bg-nthu-purple-light text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg hover:shadow-xl">
+                前往課程網頁看更多詳細資訊
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="bg-gray-800 text-gray-400 py-6 text-center text-sm">
+        <p>Copyright © National Tsing Hua University. 本網頁為互動式課程簡介展示。</p>
+    </footer>
+
+    <!-- 問答互動 Modal -->
+    <div id="quiz-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 transition-opacity">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative transform transition-transform scale-100">
+            <!-- Modal Header -->
+            <div class="bg-nthu-purple text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold" id="modal-title">關卡挑戰</h3>
+                <button onclick="closeModal()" class="text-white hover:text-gray-200 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="p-6">
+                <div class="mb-6 bg-purple-50 p-4 rounded-lg text-gray-700 leading-relaxed" id="modal-info">
+                    <!-- 課程資訊會放在這 -->
+                </div>
+                <div class="font-bold text-lg mb-4 text-gray-800" id="modal-question">
+                    <!-- 問題會放在這 -->
+                </div>
+                <div class="space-y-3" id="modal-options">
+                    <!-- 選項按鈕會放在這 -->
+                </div>
+                <!-- 複選題送出按鈕 -->
+                <button id="modal-submit-btn" class="hidden w-full mt-5 bg-nthu-purple text-white font-bold py-3 rounded-xl hover:bg-nthu-purple-light transition-colors shadow-md">
+                    確認送出
+                </button>
+                <!-- 錯誤提示 -->
+                <div id="error-message" class="hidden mt-4 text-red-500 font-semibold text-center animate-bounce">
+                    <i class="fas fa-exclamation-circle mr-1"></i> 哎呀，答錯囉！請再仔細看看資訊。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 闖關邏輯 -->
+    <script>
+        // 關卡資料庫 (內容基於清大職涯組網頁資訊)
+        const levelData = [
+            {
+                id: 1,
+                title: "第一關：初探企領微學分",
+                subtitle: "課程簡介",
+                icon: "fa-search",
+                info: "【企業領航微學分課程】這是一門含金量超高、由專業人士親自指導的實用課程！",
+                question: "請問這門課程主要由誰來授課？",
+                options: [
+                    "全由校內專職教授授課", 
+                    "由企業高階主管與專業業師授課"
+                ],
+                correctIndex: 1,
+                successMsg: "答對了！業師授課能讓你直接吸收業界第一手的實戰經驗！"
+            },
+            {
+                id: 2,
+                title: "第二關：資格解密",
+                subtitle: "選課條件",
+                icon: "fa-user-graduate",
+                info: "這門課不是所有人都能選修的喔！它是為了準備接軌職場的同學量身打造的進階學習機會，幫助同學提早了解企業運作。",
+                question: "請問哪些同學可以選修微學分課程？",
+                options: [
+                    "只限大一與大二新生", 
+                    "大三以上、碩士班、研究所、非在職專班學生"
+                ],
+                correctIndex: 1,
+                successMsg: "完全正確！大三以上及研究生千萬別錯過，趕快收進課表裡！"
+            },
+            {
+                id: 3,
+                title: "第三關：企業陣容",
+                subtitle: "115-1 陣容",
+                icon: "fa-building",
+                type: "multiple",
+                info: "每一學期都會有不同的領域的企業來校開課，分享各自的專業知識。115學年度第一學期邀請了三間知名企業參與！",
+                question: "下列哪幾家企業是 115-1 的開課企業？ (複選題)",
+                options: [
+                    "Garmin", 
+                    "永豐銀行",
+                    "世界先進",
+                    "台積電"
+                ],
+                correctIndices: [0, 1, 2],
+                successMsg: "太神啦！這些企業的主管親自授課，機會難得啊！"
+            },
+            {
+                id: 4,
+                title: "第四關：滿載而歸",
+                subtitle: "通關確認",
+                icon: "fa-rocket",
+                info: "完成企業領航微學分課程，不僅能累積學分，還能豐富你的履歷，透過期末謝師餐會更能提早建立職場人脈，為未來的職涯發展打下堅實基礎。",
+                question: "你準備好選修企業領航微學分課程，開始你的職場探索之旅了嗎？",
+                options: [
+                    "還沒準備好，再想想", 
+                    "我準備好了，迫不及待！"
+                ],
+                correctIndex: 1,
+                successMsg: "太棒了！展現積極的態度是邁向成功的第一步！"
+            }
+        ];
+
+        let currentActiveLevel = 1; // 目前解鎖到第幾關
+        let currentPlayingLevel = null; // 目前正在玩的關卡
+        let selectedOptions = new Set(); // 記錄複選題選中的選項
+
+        // 初始化網頁
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLevels();
+            updateProgress();
+        });
+
+        // 渲染關卡卡片
+        function renderLevels() {
+            const container = document.getElementById('level-container');
+            container.innerHTML = '';
+
+            levelData.forEach((level, index) => {
+                let statusClass = 'locked';
+                let iconColorClass = 'bg-gray-300 text-gray-500';
+                
+                if (level.id < currentActiveLevel) {
+                    statusClass = 'completed';
+                    iconColorClass = 'bg-green-500 text-white';
+                } else if (level.id === currentActiveLevel) {
+                    statusClass = 'unlocked bg-white';
+                    iconColorClass = 'bg-nthu-purple text-white';
+                } else {
+                    statusClass = 'locked bg-gray-100';
+                }
+
+                const cardHTML = `
+                    <div class="level-card relative p-6 rounded-2xl ${statusClass}" onclick="handleCardClick(${level.id})">
+                        <!-- 完成標章 -->
+                        <div class="completed-badge absolute -top-3 -right-3 bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md z-10">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        
+                        <div class="flex flex-col items-center text-center h-full">
+                            <div class="icon-container w-20 h-20 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner transition-colors ${iconColorClass}">
+                                <i class="fas ${level.icon}"></i>
+                            </div>
+                            <span class="text-sm text-gray-500 font-medium mb-1">${level.subtitle}</span>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">${level.title}</h3>
+                            
+                            <div class="mt-auto pt-4">
+                                ${level.id < currentActiveLevel 
+                                    ? '<span class="text-green-600 font-bold"><i class="fas fa-unlock mr-1"></i>已過關</span>' 
+                                    : level.id === currentActiveLevel 
+                                        ? '<span class="text-nthu-purple font-bold animate-pulse">點擊挑戰 <i class="fas fa-arrow-right"></i></span>'
+                                        : '<span class="text-gray-400"><i class="fas fa-lock mr-1"></i>尚未解鎖</span>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+        }
+
+        // 處理卡片點擊
+        function handleCardClick(levelId) {
+            if (levelId > currentActiveLevel) {
+                // 如果點擊未解鎖的關卡，可以加個小動畫提示
+                return;
+            }
+            if (levelId < currentActiveLevel) {
+                // 已完成的關卡，可以選擇再次顯示資訊但不需作答，這裡為求簡單先不做處理
+                return;
+            }
+            
+            // 開啟當前關卡
+            openQuizModal(levelId);
+        }
+
+        // 開啟問答 Modal
+        function openQuizModal(levelId) {
+            currentPlayingLevel = levelData.find(l => l.id === levelId);
+            selectedOptions.clear(); // 清空先前的選擇
+            
+            document.getElementById('modal-title').innerText = currentPlayingLevel.title;
+            document.getElementById('modal-info').innerHTML = `<i class="fas fa-info-circle text-nthu-purple mr-2"></i> ${currentPlayingLevel.info}`;
+            
+            // 標示單選或複選提示
+            const qText = currentPlayingLevel.type === 'multiple' 
+                ? `${currentPlayingLevel.question} <span class="text-nthu-purple text-sm ml-2">(此題為複選)</span>` 
+                : currentPlayingLevel.question;
+            document.getElementById('modal-question').innerHTML = qText;
+            document.getElementById('error-message').classList.add('hidden');
+            
+            const optionsContainer = document.getElementById('modal-options');
+            optionsContainer.innerHTML = '';
+            
+            // 處理送出按鈕顯示與否
+            const submitBtn = document.getElementById('modal-submit-btn');
+            if (currentPlayingLevel.type === 'multiple') {
+                submitBtn.classList.remove('hidden');
+                submitBtn.onclick = checkMultipleAnswer;
+            } else {
+                submitBtn.classList.add('hidden');
+            }
+            
+            currentPlayingLevel.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left px-5 py-4 rounded-xl border-2 border-gray-200 hover:border-nthu-purple hover:bg-purple-50 transition-colors font-medium text-gray-700 flex items-center justify-between group';
+                
+                const iconClass = currentPlayingLevel.type === 'multiple' ? 'far fa-square' : 'far fa-circle';
+                
+                btn.innerHTML = `
+                    <span>${opt}</span>
+                    <i class="${iconClass} text-gray-300 group-hover:text-nthu-purple"></i>
+                `;
+                btn.onclick = () => {
+                    if (currentPlayingLevel.type === 'multiple') {
+                        toggleOption(index, btn);
+                    } else {
+                        checkAnswer(index, btn);
+                    }
+                };
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        }
+
+        // 複選題選項切換邏輯
+        function toggleOption(index, btn) {
+            if (selectedOptions.has(index)) {
+                selectedOptions.delete(index);
+                btn.classList.remove('border-nthu-purple', 'bg-purple-50');
+                btn.classList.add('border-gray-200');
+                btn.querySelector('i').className = 'far fa-square text-gray-300 group-hover:text-nthu-purple';
+            } else {
+                selectedOptions.add(index);
+                btn.classList.remove('border-gray-200');
+                btn.classList.add('border-nthu-purple', 'bg-purple-50');
+                btn.querySelector('i').className = 'fas fa-check-square text-nthu-purple text-xl';
+            }
+        }
+
+        // 複選題驗證邏輯
+        function checkMultipleAnswer() {
+            // 檢查是否選中數量正確且選項皆包含在 correctIndices 內
+            const isCorrect = 
+                selectedOptions.size === currentPlayingLevel.correctIndices.length &&
+                currentPlayingLevel.correctIndices.every(idx => selectedOptions.has(idx));
+            
+            const allBtns = document.getElementById('modal-options').children;
+            const submitBtn = document.getElementById('modal-submit-btn');
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitBtn.onclick = null;
+
+            for(let i = 0; i < allBtns.length; i++) {
+                let btn = allBtns[i];
+                btn.onclick = null; // 鎖定點擊
+                
+                if (isCorrect) {
+                    if (currentPlayingLevel.correctIndices.includes(i)) {
+                        btn.className = 'w-full text-left px-5 py-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-700 flex items-center justify-between opacity-100';
+                        btn.querySelector('i').className = 'fas fa-check-square text-green-500 text-xl';
+                    } else {
+                        btn.className = 'w-full text-left px-5 py-4 rounded-xl border-2 border-gray-200 text-gray-700 flex items-center justify-between opacity-50 cursor-not-allowed';
+                    }
+                } else {
+                    if (selectedOptions.has(i)) {
+                        btn.className = 'w-full text-left px-5 py-4 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 flex items-center justify-between opacity-100';
+                        btn.querySelector('i').className = 'fas fa-times text-red-500 text-xl';
+                    } else {
+                        btn.className = 'w-full text-left px-5 py-4 rounded-xl border-2 border-gray-200 text-gray-700 flex items-center justify-between opacity-50 cursor-not-allowed';
+                    }
+                }
+            }
+
+            if (isCorrect) {
+                document.getElementById('error-message').classList.add('hidden');
+                setTimeout(() => {
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    levelComplete();
+                }, 1200);
+            } else {
+                document.getElementById('error-message').classList.remove('hidden');
+                setTimeout(() => {
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    openQuizModal(currentPlayingLevel.id); // 重新載入關卡
+                }, 2000);
+            }
+        }
+
+        // 關閉 Modal
+        function closeModal() {
+            document.getElementById('quiz-modal').classList.add('hidden');
+            currentPlayingLevel = null;
+        }
+
+        // 檢查答案
+        function checkAnswer(selectedIndex, btnElement) {
+            const isCorrect = selectedIndex === currentPlayingLevel.correctIndex;
+            
+            // 重置所有按鈕樣式
+            const allBtns = document.getElementById('modal-options').children;
+            for(let btn of allBtns) {
+                btn.className = 'w-full text-left px-5 py-4 rounded-xl border-2 border-gray-200 text-gray-700 flex items-center justify-between opacity-50 cursor-not-allowed';
+                btn.onclick = null; // 答題後鎖定
+                btn.querySelector('i').className = 'far fa-circle text-gray-300';
+            }
+
+            if (isCorrect) {
+                // 答對樣式
+                btnElement.classList.remove('border-gray-200', 'opacity-50');
+                btnElement.classList.add('border-green-500', 'bg-green-50', 'text-green-700', 'opacity-100');
+                btnElement.querySelector('i').className = 'fas fa-check-circle text-green-500 text-xl';
+                
+                document.getElementById('error-message').classList.add('hidden');
+                
+                // 延遲一下讓使用者看到正確樣式，然後過關
+                setTimeout(() => {
+                    levelComplete();
+                }, 800);
+            } else {
+                // 答錯樣式
+                btnElement.classList.remove('border-gray-200');
+                btnElement.classList.add('border-red-500', 'bg-red-50', 'text-red-700', 'opacity-100');
+                btnElement.querySelector('i').className = 'fas fa-times-circle text-red-500 text-xl';
+                
+                document.getElementById('error-message').classList.remove('hidden');
+                
+                // 答錯後允許重新點擊挑戰 (重置 Modal)
+                setTimeout(() => {
+                    openQuizModal(currentPlayingLevel.id);
+                }, 1500);
+            }
+        }
+
+        // 關卡完成邏輯
+        function levelComplete() {
+            closeModal();
+            currentActiveLevel++;
+            renderLevels();
+            updateProgress();
+
+            // 檢查是否全破
+            if (currentActiveLevel > levelData.length) {
+                showSuccessSequence();
+            }
+        }
+
+        // 更新進度條
+        function updateProgress() {
+            const percentage = Math.min(((currentActiveLevel - 1) / levelData.length) * 100, 100);
+            document.getElementById('progress-bar').style.width = percentage + '%';
+            document.getElementById('progress-text').innerText = Math.round(percentage) + '%';
+        }
+
+        // 顯示最終通關畫面與煙火特效
+        function showSuccessSequence() {
+            const successSection = document.getElementById('success-section');
+            successSection.classList.remove('hidden');
+            
+            // 加入淡入動畫
+            setTimeout(() => {
+                successSection.classList.remove('scale-95', 'opacity-0');
+                successSection.classList.add('scale-100', 'opacity-100');
+                
+                // 觸發煙火特效 (需要網路連線載入 canvas-confetti)
+                if (typeof confetti === 'function') {
+                    const duration = 3000;
+                    const end = Date.now() + duration;
+
+                    (function frame() {
+                        confetti({
+                            particleCount: 5,
+                            angle: 60,
+                            spread: 55,
+                            origin: { x: 0 },
+                            colors: ['#6B21A8', '#10B981', '#F59E0B']
+                        });
+                        confetti({
+                            particleCount: 5,
+                            angle: 120,
+                            spread: 55,
+                            origin: { x: 1 },
+                            colors: ['#6B21A8', '#10B981', '#F59E0B']
+                        });
+
+                        if (Date.now() < end) {
+                            requestAnimationFrame(frame);
+                        }
+                    }());
+                }
+            }, 100);
+        }
+    </script>
+</body>
+</html>
